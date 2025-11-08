@@ -1,341 +1,175 @@
-# 📖 Dokumentasi Bahasa Pseudocode (Gaya Telkom University)
+# 📖 Interpreter Pseudocode (Gaya Telkom University)
+Ini adalah proyek interpreter untuk bahasa pseudocode yang didesain berdasarkan silabus Algoritma & Pemrograman (sering disebut "Gaya Telkom University").
+Proyek ini menyediakan dua runtime (cara menjalankan) yang terpisah namun fungsionalitasnya identik:
+ * psd.cpp (C++): Versi kompilasi native yang sangat cepat dan efisien.
+ * psd.js (Node.js): Versi skrip yang portabel dan mudah dijalankan di mana saja.
+🚀 Fitur Bahasa
+Interpreter ini mendukung fungsionalitas algoritma yang komprehensif:
+ * Struktur Dasar: program, kamus, algoritma, endprogram.
+ * Tipe Primitif: integer, real, string, character, boolean.
+ * Tipe Kustom: type ... < ... > (Struct) dan type ... ... (Alias/Typedef).
+ * Deklarasi: const (dengan inisialisasi) dan var (tanpa inisialisasi).
+ * Struktur Data: Array multi-dimensi (integer[10][5]).
+ * String Mutable: String dapat diubah karakternya (nama[0] = 'J').
+ * Operator Lengkap:
+   * Aritmatika: +, -, *, / (real), div (integer), mod.
+   * Logika: &&, ||, !, ==, !=, >, <, >=, <=.
+ * Struktur Kontrol:
+   * if ... then ... else if ... then ... else ... endif
+   * for ... = ... to ... do ... endfor
+   * while ... do ... endwhile
+   * repeat ... untuk ...
+ * I/O: output(...) dan input(...) (berbasis token, mirip cin C++).
+ * Fungsi Bawaan: size(), integer(), string(), real(), boolean(), character().
+ * Komentar: // ... (satu baris) dan /* ... */ (multi-baris).
+ * Sintaks Fleksibel: Titik koma (;) bersifat opsional sebagai pemisah baris, namun wajib untuk memisahkan beberapa statement pada baris yang sama.
+🛠️ Instalasi dan Penggunaan
+Anda hanya perlu memilih salah satu dari dua opsi berikut untuk menjalankan program.
+Opsi A: Versi C++ (Direkomendasikan untuk Performa)
+Versi ini perlu dikompilasi (compile) terlebih dahulu menjadi file executable (program jadi).
+1. Prasyarat
+Anda memerlukan compiler C++ yang mendukung C++17:
+ * Linux: g++ (biasanya bagian dari build-essential).
+ * macOS: clang++ (dari Xcode Command Line Tools).
+ * Windows: MSVC (dari "Desktop development with C++" di Visual Studio Installer).
+2. Kompilasi
+Buka terminal Anda di folder proyek (tempat psd.cpp berada) dan jalankan perintah yang sesuai untuk OS Anda:
+ * Linux (g++)
+   g++ -std=c++17 -O2 -o psd psd.cpp
 
-## Pendahuluan
+ * macOS (clang++)
+   clang++ -std=c++17 -O2 -o psd psd.cpp
 
-Ini adalah bahasa pseudocode yang dapat dieksekusi, dirancang berdasarkan "Gaya Telkom University" untuk mata kuliah Algoritma dan Pemrograman. Bahasa ini bertujuan untuk menjembatani kesenjangan antara pseudocode teoretis di kelas dan kode yang dapat dijalankan secara praktis.
+ * Windows (MSVC)
+   Buka x64 Native Tools Command Prompt (dari menu Start) dan navigasi ke folder Anda.
+   cl /std:c++17 /EHsc /O2 psd.cpp /Fepsd.exe
 
-Interpreter ini dirancang untuk menjadi ketat (strict) namun tetap fleksibel, dengan fokus pada kejelasan dan struktur algoritma.
+   * /Fe memberi nama file output psd.exe.
+3. Menjalankan
+Setelah kompilasi berhasil, Anda akan mendapatkan file psd (atau psd.exe).
+# Di Linux/macOS
+./psd nama_file_anda.psd
 
-## Struktur Program Dasar
+# Di Windows
+.\psd.exe nama_file_anda.psd
 
-Setiap program harus memiliki tiga bagian utama yang dideklarasikan oleh *keyword*: `program`, `kamus`, dan `algoritma`. Program diakhiri dengan `endprogram`.
+Opsi B: Versi Node.js (Direkomendasikan untuk Portabilitas)
+Versi ini tidak perlu dikompilasi, tetapi memerlukan Node.js dan beberapa dependensi.
+1. Prasyarat
+Pastikan Anda telah menginstal Node.js (v14 atau lebih baru).
+2. Instalasi Dependensi
+Buka terminal Anda di folder proyek (tempat psd.js berada) dan jalankan perintah ini satu kali:
+npm install readline-sync expr-eval
 
-```
+ * readline-sync: Digunakan untuk menangani input() secara sinkron.
+ * expr-eval: Digunakan untuk mengevaluasi ekspresi matematika dan logika.
+3. Menjalankan
+node psd.js nama_file_anda.psd
+
+📜 Panduan Bahasa (Sintaks)
+Berikut adalah panduan lengkap sintaks bahasa pseudocode ini.
+Struktur Program Dasar
 program NamaProgramAnda
 
 kamus
-    // Semua deklarasi variabel, tipe, dan konstanta
-    // ada di sini.
-
+    // Deklarasi Tipe, Konstanta, dan Variabel
 algoritma
-    // Semua logika, perulangan, dan I/O
-    // ada di sini.
-
+    // Logika Program
 endprogram
-```
 
-## Komentar
-
-Komentar dapat ditulis dalam dua cara:
-
-1.  **Komentar Satu Baris:** Menggunakan `//`
-    ```
-    // Ini adalah komentar satu baris
-    ```
-2.  **Komentar Multi-Baris:** Menggunakan `/* ... */`
-    ```
-    /*
-      Ini adalah
-      komentar multi-baris.
-    */
-    ```
-
-## Bagian `kamus` (Deklarasi)
-
-Bagian `kamus` adalah tempat untuk mendefinisikan semua "kata" yang akan digunakan program, termasuk tipe data, variabel, dan konstanta.
-
-### Tipe Data Primitif
-
-Bahasa ini mendukung tipe-tipe data dasar berikut:
-
-  * `integer`: Bilangan bulat (misal: `10`, `-5`, `0`).
-  * `real`: Bilangan pecahan/desimal (misal: `3.14`, `-0.5`).
-  * `string`: Kumpulan karakter, diapit **kutip ganda** (`"`).
-  * `character`: Satu karakter, diapit **kutip tunggal** (`'`).
-  * `boolean`: Nilai logika (`true` atau `false`).
-
-### Tipe Data Lanjutan (Struct)
-
-Anda dapat membuat tipe data terstruktur kustom menggunakan `type ... < ... >`.
-
-```
+Bagian kamus
+Tipe Data
+ * integer: 10, -5
+ * real: 3.14, 0.5
+ * boolean: true, false
+ * string: "Hello" (kutip ganda)
+ * character: 'A' (kutip tunggal)
+Tipe Kustom (Struct)
 type Mahasiswa <
     nama : string
     nim : string
     ipk : real
-    semester : integer
 >
-```
 
-### Tipe Alias (Typedef)
-
-Anda dapat memberi nama alias ke tipe data yang sudah ada menggunakan `type`.
-
-```
-type BilanganBulat integer
+Tipe Alias (Typedef)
+type Bilangan integer
 type Teks string
-```
 
-### Array
+Array (0-indexed)
+nilai : integer[10]     // Array 1D
+matrix : real[5][5]     // Array 2D
+kelas : Mahasiswa[40]   // Array dari Struct
 
-Array dideklarasikan dengan menambahkan tanda kurung siku `[ukuran]` setelah nama tipe. Array bersifat *0-indexed*.
+Variabel (var)
+nama : string
+a, b, c : integer
+mhs1 : Mahasiswa
 
-```
-kamus
-    // Array 1D dengan 10 elemen integer
-    nilai : integer[10]
-    
-    // Array 2D (matrix 5x5) dari real
-    matrix : real[5][5]
-    
-    // Array dari tipe data struct
-    kelas : Mahasiswa[40]
-```
+Konstanta (const)
+const PI : real = 3.14
+const NAMA_APP : string = "Interpreter"
 
-### Deklarasi Variabel (`var`)
+Bagian algoritma
+Assignment (=)
+x = 10
+isValid = true
+mhs1.nama = "Budi"
+nilai[0] = 100
+salam = "Halo"
+salam[0] = 'J'  // String bersifat mutable
 
-Variabel dideklarasikan di `kamus` tanpa nilai awal. Nilai awal default-nya adalah `0`, `0.0`, `false`, atau `""` (string kosong).
+I/O
+output("Hello, World!")
+output("Nilai:", x, "dan", y)
 
-```
-kamus
-    // Deklarasi satu per satu
-    nama : string
-    umur : integer
-    
-    // Deklarasi ganda
-    a, b, c : integer
-    
-    // Deklarasi array dan struct
-    dataNilai : integer[10]
-    mhs1 : Mahasiswa
-```
+input(nama)
+input(a, b, c) // Input berbasis token
+input(mhs1.nama, nilai[1])
 
-### Deklarasi Konstanta (`const`)
+Operator
+| Kategori | Operator |
+|---|---|
+| Aritmatika | +, -, *, / (real), div (int), mod |
+| Perbandingan | ==, !=, >, <, >=, <= |
+| Logika | && (AND), ` |
+Percabangan
+if nilai > 90 then
+    output("Grade A")
+else if nilai > 80 then
+    output("Grade B")
+else
+    output("Grade C")
+endif
 
-Konstanta dideklarasikan dan **harus** diinisialisasi di `kamus`. Nilainya tidak dapat diubah di bagian `algoritma`.
+Perulangan
+// For (inklusif)
+for i = 1 to 5 do
+    output(i)
+endfor
 
-```
-kamus
-    const PI : real = 3.14
-    const NAMA_APP : string = "Interpreter"
-    const MAKS_USER : integer = 100
-    const DEBUG_MODE : boolean = true
-```
+// While (Cek di awal)
+n = 3
+while n > 0 do
+    output(n)
+    n = n - 1
+endwhile
 
-## Bagian `algoritma` (Logika)
+// Repeat (Cek di akhir, ulangi SELAMA kondisi true)
+n = 5
+repeat
+    output(n)
+    n = n - 1
+untuk (n > 0)
 
-Bagian `algoritma` adalah tempat logika program dieksekusi.
+Fungsi Bawaan
+n = size("hello")   // n = 5
+n = size(nilai)     // n = 10 (dari deklarasi array)
 
-### Titik Koma (`;`)
+x = integer("123")  // x = 123
+s = string(3.14)    // s = "3.14"
 
-Titik koma (`;`) bersifat **opsional** jika hanya ada satu statement per baris. Titik koma **wajib** digunakan untuk memisahkan beberapa statement pada baris yang sama.
-
-```
-algoritma
-    // VALID (Tanpa ;)
-    output("Baris 1")
-    output("Baris 2")
-
-    // VALID (Dengan ;)
-    x = 10;
-    y = 20;
-
-    // VALID (Beberapa statement satu baris)
-    output("Masukkan nama: "); input(nama); output("Halo,", nama)
-```
-
-### Penugasan (Assignment)
-
-Assignment menggunakan operator `=`. Anda dapat melakukan assignment ke variabel, *field* struct, elemen array, dan karakter string.
-
-```
-algoritma
-    // Assignment dasar
-    x = 10
-    total = x + 5
-    isValid = (x > 5) && (x < 20)
-    
-    // Assignment ke field Struct
-    mhs1.nama = "Budi"
-    mhs1.ipk = 3.5
-    
-    // Assignment ke elemen Array
-    dataNilai[0] = 100
-    dataNilai[1] = 90
-    dataNilai[2] = dataNilai[0] + dataNilai[1]
-    
-    // Assignment ke Karakter String (String bersifat MUTABLE)
-    salam = "Halo"
-    salam[0] = 'J'  // -> "Jalo"
-    salam[1] = 'a'  // -> "Jalo"
-    output(salam)   // Output: Jalo
-```
-
-### Input / Output (I/O)
-
-#### `output(...)`
-
-Mencetak satu atau lebih nilai ke konsol. Setiap argumen dipisahkan oleh spasi.
-
-```
-algoritma
-    x = 10
-    output("Hello, World!")
-    output("Nilai x adalah:", x, "dan 2x adalah:", x * 2)
-```
-
-Output:
-
-```
-Hello, World!
-Nilai x adalah: 10 dan 2x adalah: 20
-```
-
-#### `input(...)`
-
-Membaca input dari pengguna. Interpreter ini menggunakan *token-based input* (mirip `cin` pada C++). Ia akan membaca "kata" (dipisah spasi atau baris baru) satu per satu.
-
-```
-algoritma
-    // Meminta 3 nilai
-    output("Masukkan 3 angka (bisa dipisah spasi atau enter):")
-    input(a, b, c) 
-    
-    output("Masukkan nama:")
-    input(nama)
-```
-
-### Operator
-
-#### Aritmatika
-
-| Operator | Deskripsi | Contoh |
-| :--- | :--- | :--- |
-| `+` | Penjumlahan (Angka) / Konkatenasi (String) | `5 + 2` (7), `"a" + "b"` ("ab") |
-| `-` | Pengurangan | `5 - 2` (3) |
-| `*` | Perkalian | `5 * 2` (10) |
-| `/` | Pembagian (menghasilkan `real`) | `5 / 2` (2.5) |
-| `div` | Pembagian (menghasilkan `integer`) | `5 div 2` (2) |
-| `mod` | Modulo (Sisa bagi) | `5 mod 2` (1) |
-
-#### Logika dan Perbandingan
-
-| Operator | Deskripsi | Contoh |
-| :--- | :--- | :--- |
-| `&&` | Logika AND | `(a > 5) && (b == 10)` |
-| `||` | Logika OR | `(a < 0) || (b == 0)` |
-| `!` | Logika NOT | `!isValid` |
-| `==` | Sama dengan | `a == 10` |
-| `!=` | Tidak sama dengan | `nama != "admin"` |
-| `>` | Lebih besar dari | `a > 10` |
-| `<` | Lebih kecil dari | `a < 10` |
-| `>=` | Lebih besar atau sama dengan | `a >= 10` |
-| `<=` | Lebih kecil atau sama dengan | `a <= 10` |
-
-### Struktur Kontrol (Percabangan)
-
-Menggunakan sintaks `if ... then ... else if ... then ... else ... endif`.
-
-```
-algoritma
-    if nilai > 90 then
-        output("Grade A")
-    else if nilai > 80 then
-        output("Grade B")
-    else
-        output("Grade C")
-    endif
-```
-
-### Struktur Kontrol (Perulangan)
-
-#### `for`
-
-Perulangan `for` bersifat inklusif (dari `1` **sampai** `N`). Variabel *loop* (`i`) harus sudah dideklarasikan di `kamus`.
-
-```
-algoritma
-    // Akan mencetak 1 2 3 4 5
-    for i = 1 to 5 do
-        output(i)
-    endfor
-```
-
-#### `while`
-
-Perulangan `while` mengecek kondisi di awal. Loop hanya berjalan jika kondisi `true`.
-
-```
-algoritma
-    n = 3
-    while n > 0 do
-        output(n)
-        n = n - 1
-    endwhile
-```
-
-Output:
-
-```
-3
-2
-1
-```
-
-#### `repeat ... untuk`
-
-Perulangan `repeat` (do-while) mengecek kondisi di akhir. Loop akan berjalan **minimal satu kali**. Perulangan akan terus diulang **selama** (while) kondisi bernilai `true`.
-
-```
-algoritma
-    n = 5
-    repeat
-        output(n)
-        n = n - 1
-    untuk (n > 0)
-```
-
-Output:
-
-```
-5
-4
-3
-2
-1
-```
-
-## Fungsi Bawaan
-
-Fungsi-fungsi ini dapat digunakan di dalam bagian `algoritma`.
-
-### `size(variabel)`
-
-Mengembalikan ukuran dari `string` (panjang karakter) atau `array` (jumlah elemen).
-
-```
-kamus
-    nama : string
-    nilai : integer[10]
-algoritma
-    nama = "Budi"
-    output(size(nama))  // Output: 4
-    output(size(nilai)) // Output: 10
-```
-
-### Konversi Tipe (Casting)
-
-| Fungsi | Deskripsi | Contoh |
-| :--- | :--- | :--- |
-| `integer(var)` | Konversi ke `integer` | `integer("123")` (123) |
-| `real(var)` | Konversi ke `real` | `real("3.14")` (3.14) |
-| `string(var)` | Konversi ke `string` | `string(123)` ("123") |
-| `boolean(var)` | Konversi ke `boolean` | `boolean("true")` (true) |
-| `character(var)` | Konversi ke `character` | `character("abc")` ('a') |
-
-## Contoh Program Lengkap
-
-```
+💡 Contoh Program (example.psd)
+Berikut adalah file contoh (example.psd) yang dapat Anda gunakan untuk menguji interpreter.
 program DemoLengkap
 
 kamus
@@ -352,7 +186,8 @@ kamus
     mhs1 : Mahasiswa
     data : integer[3]
     i, n : integer
-    namaUser : string
+    salam : string
+    stop : boolean
 
 algoritma
     // --- Struct dan Array Assignment ---
@@ -369,10 +204,10 @@ algoritma
     output("Tahun:", TAHUN)
     
     // --- String Mutable dan size() ---
-    namaUser = mhs1.nama // "Jonathan"
-    namaUser[0] = 'j'
-    output("Nama diubah:", namaUser) // "jonathan"
-    output("Panjang nama:", size(namaUser)) // 8
+    salam = "Halo"
+    salam[0] = 'J' // Mengganti H -> J
+    output("String diubah:", salam) // "Jalo"
+    output("Panjang nama:", size(salam)) // 4
     
     // --- Perulangan For ---
     output("--- Loop For ---")
@@ -396,6 +231,9 @@ algoritma
     else
         output("Angka Anda adalah 10")
     endif
+    
+    output("Tes Selesai.")
 
 endprogram
-```
+
+ 
