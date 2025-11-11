@@ -63,6 +63,12 @@ export class Parser {
     while (!this.check(TokenType.ALGORITMA) && !this.isAtEnd()) {
       try {
         declarations.push(this.declaration());
+        
+        // --- TAMBAHAN BARU ---
+        // Setelah deklarasi, boleh ada ; (meski tidak umum)
+        while (this.match(TokenType.SEMICOLON)) {}
+        // --- AKHIR TAMBAHAN ---
+
       } catch (error) {
         this.synchronize(); // Coba pulih dari error
       }
@@ -124,6 +130,13 @@ export class Parser {
     while (!this.check(TokenType.ENDPROGRAM) && !this.isAtEnd()) {
       try {
         statements.push(this.statement());
+        
+        // --- TAMBAHAN BARU ---
+        // Setelah statement, makan semua token ;
+        // Ini memperbolehkan: output(1); output(2);
+        while (this.match(TokenType.SEMICOLON)) {}
+        // --- AKHIR TAMBAHAN ---
+
       } catch (error) {
         this.synchronize();
       }
@@ -131,7 +144,6 @@ export class Parser {
     return statements;
   }
   
-  // --- PERBAIKAN BUG LOGIKA ADA DI SINI ---
   private block(stopTokens: TokenType[]): BlockStmt {
     const statements: Stmt[] = [];
 
@@ -143,10 +155,14 @@ export class Parser {
 
     while (!isAtBlockEnd()) {
       statements.push(this.statement());
+      
+      // --- TAMBAHAN BARU ---
+      // Setelah statement, makan semua token ;
+      while (this.match(TokenType.SEMICOLON)) {}
+      // --- AKHIR TAMBAHAN ---
     }
     return new BlockStmt(statements);
   }
-  // --- AKHIR PERBAIKAN BLOK ---
 
   private statement(): Stmt {
     if (this.match(TokenType.IF)) return this.ifStatement();

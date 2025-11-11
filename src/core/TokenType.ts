@@ -12,7 +12,8 @@ export enum TokenType {
   RIGHT_BRACKET,  // ]
   COLON,          // :
   COMMA,          // ,
-  
+  SEMICOLON,      // ;  <--- TAMBAHAN BARU
+
   // --- Operator Aritmatika & Assignment ---
   PLUS,           // +
   MINUS,          // -
@@ -78,7 +79,6 @@ export enum TokenType {
   OUTPUTF,
   INPUT,
   INPUTF,
-  // LENGTH,  <-- DIHAPUS (Agar dianggap sebagai Identifier)
 
   // --- Keywords - Literal Boolean ---
   TRUE,
@@ -131,7 +131,6 @@ export const keywords: Record<string, TokenType> = {
   "outputf": TokenType.OUTPUTF,
   "input": TokenType.INPUT,
   "inputf": TokenType.INPUTF,
-  // "length": TokenType.LENGTH, <-- DIHAPUS (Agar dianggap sebagai Identifier)
   "true": TokenType.TRUE,
   "false": TokenType.FALSE,
 };

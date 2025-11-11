@@ -206,6 +206,18 @@ Operasi aritmatika dapat dilakukan seperti bahasa pemograman umum:
 - `*=` (shortcut `a = a * x`)
 - `/=` (shortcut `a = a / x`)
 
+# Seperate ";"
+Ini bagaimana cara mengeksekusi dua kode dalam satu baris:
+
+contoh:
+```psd
+...
+algoritma
+    outputf("Masukan nama: "); input(name)
+    ...
+...
+```
+
 ## If-Else-Then
 Ini adalah Jika maka sama seperti di bahasa pemograman umumnya
 ```psd
