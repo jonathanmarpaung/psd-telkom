@@ -3,12 +3,15 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "rootDir": ".",
+    // "rootDir": "./src",  <-- HAPUS BARIS INI
     "outDir": "./dist",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
+    "isolatedModules": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"]
+  // PERBARUI BAGIAN INI:
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules"]
 }

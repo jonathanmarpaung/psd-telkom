@@ -131,13 +131,22 @@ export class Parser {
     return statements;
   }
   
+  // --- PERBAIKAN BUG LOGIKA ADA DI SINI ---
   private block(stopTokens: TokenType[]): BlockStmt {
     const statements: Stmt[] = [];
-    while (!stopTokens.some(token => this.check(token)) && !this.isAtEnd()) {
+
+    // Fungsi helper untuk mengecek apakah kita harus berhenti
+    const isAtBlockEnd = () => 
+      stopTokens.some(token => this.check(token)) || // Berhenti di token yg diminta (cth: ELSE, ENDIF)
+      this.check(TokenType.ENDPROGRAM) || // Selalu berhenti di akhir program
+      this.isAtEnd(); // Selalu berhenti di akhir file
+
+    while (!isAtBlockEnd()) {
       statements.push(this.statement());
     }
     return new BlockStmt(statements);
   }
+  // --- AKHIR PERBAIKAN BLOK ---
 
   private statement(): Stmt {
     if (this.match(TokenType.IF)) return this.ifStatement();
@@ -152,7 +161,7 @@ export class Parser {
     return this.expressionStatement();
   }
 
-  private ifStatement(): Stmt {
+  private ifStatement(isElseIf: boolean = false): Stmt {
     const condition = this.expression();
     this.consume(TokenType.THEN, "Diharapkan 'then' setelah kondisi if.");
     const thenBranch = this.block([TokenType.ELSE, TokenType.ENDIF]);
@@ -161,17 +170,13 @@ export class Parser {
     
     if (this.match(TokenType.ELSE)) {
       if (this.match(TokenType.IF)) {
-        // Ini 'else if', panggil rekursif
-        elseBranch = this.ifStatement();
+        elseBranch = this.ifStatement(true); // Kirim 'true'
       } else {
-        // Ini 'else' biasa
         elseBranch = this.block([TokenType.ENDIF]);
       }
     }
     
-    // Hanya 'if' terluar atau 'else' terakhir yang akan
-    // bertanggung jawab memakan 'endif'
-    if (!this.check(TokenType.ELSE)) {
+    if (!isElseIf) {
         this.consume(TokenType.ENDIF, "Diharapkan 'endif' untuk menutup blok if.");
     }
     
@@ -205,7 +210,6 @@ export class Parser {
     return new RepeatStmt(body, condition);
   }
 
-  // Helper untuk argumen fungsi
   private functionArguments(): Expr[] {
     const args: Expr[] = [];
     if (!this.check(TokenType.RIGHT_PAREN)) {
@@ -387,10 +391,8 @@ export class Parser {
   }
 
   private primary(): Expr {
-    // --- PERBAIKAN ADA DI SINI ---
     if (this.match(TokenType.TRUE)) return new LiteralExpr(true);
     if (this.match(TokenType.FALSE)) return new LiteralExpr(false);
-    // -----------------------------
 
     if (this.match(TokenType.NUMBER_LITERAL, TokenType.STRING_LITERAL, TokenType.CHAR_LITERAL)) {
       return new LiteralExpr(this.previous().literal);
@@ -414,7 +416,6 @@ export class Parser {
   // HELPER DAN ERROR HANDLING
   // ==================================================================
 
-  // Cek apakah token saat ini cocok dengan salah satu tipe
   private match(...types: TokenType[]): boolean {
     for (const type of types) {
       if (this.check(type)) {
@@ -425,50 +426,38 @@ export class Parser {
     return false;
   }
 
-  // Memaksa token saat ini harus tipe tertentu, lalu maju
   private consume(type: TokenType, message: string): Token {
     if (this.check(type)) return this.advance();
     throw this.error(this.peek(), message);
   }
 
-  // Cek token saat ini tanpa memajukan
   private check(type: TokenType): boolean {
     return this.peek().type === type;
   }
 
-  // Maju ke token berikutnya
   private advance(): Token {
     if (!this.isAtEnd()) this.current++;
     return this.previous();
   }
 
-  // Cek apakah sudah di akhir
   private isAtEnd(): boolean {
     return this.peek().type === TokenType.EOF;
   }
 
-  // Mengintip token saat ini
   private peek(): Token {
     return this.tokens[this.current];
   }
 
-  // Mendapatkan token sebelumnya
   private previous(): Token {
     return this.tokens[this.current - 1];
   }
 
-  // Melaporkan dan melempar error
   private error(token: Token, message: string): ParseError {
     ErrorHandler.error(token, message); // Panggil ErrorHandler terpusat
     return new ParseError(message);
   }
 
-  /**
-   * Mode panik: Sinkronisasi setelah error.
-   * Terus maju sampai menemukan "batas" statement berikutnya.
-   */
   private synchronize(): void {
-    this.advance();
     while (!this.isAtEnd()) {
       switch (this.peek().type) {
         case TokenType.IF:
@@ -479,9 +468,14 @@ export class Parser {
         case TokenType.OUTPUTF:
         case TokenType.INPUT:
         case TokenType.INPUTF:
+        case TokenType.KAMUS:
         case TokenType.ALGORITMA:
         case TokenType.ENDPROGRAM:
-          return;
+        case TokenType.ENDIF: 
+        case TokenType.ENDWHILE: 
+        case TokenType.ENDFOR: 
+        case TokenType.UNTUK: 
+          return; 
       }
       this.advance();
     }
