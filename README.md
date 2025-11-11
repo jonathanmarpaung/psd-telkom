@@ -51,7 +51,7 @@ Proyek ini dibangun dengan Node.js dan TypeScript.
 
 1.  **Clone repositori:**
     ```bash
-    git clone <url-repositori-anda>
+    git clone https://github.com/jonathanmarpaung/psd-telkom
     cd psd-lang
     ```
 
