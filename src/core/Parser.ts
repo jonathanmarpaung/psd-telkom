@@ -387,14 +387,15 @@ export class Parser {
   }
 
   private primary(): Expr {
-    if (this.match(TokenType.BENAR)) return new LiteralExpr(true);
-    if (this.match(TokenType.SALAH)) return new LiteralExpr(false);
+    // --- PERBAIKAN ADA DI SINI ---
+    if (this.match(TokenType.TRUE)) return new LiteralExpr(true);
+    if (this.match(TokenType.FALSE)) return new LiteralExpr(false);
+    // -----------------------------
 
     if (this.match(TokenType.NUMBER_LITERAL, TokenType.STRING_LITERAL, TokenType.CHAR_LITERAL)) {
       return new LiteralExpr(this.previous().literal);
     }
 
-    // Perbaikan typo 'this_match' -> 'this.match' ada di sini
     if (this.match(TokenType.IDENTIFIER)) {
       return new VariableExpr(this.previous());
     }
@@ -432,7 +433,6 @@ export class Parser {
 
   // Cek token saat ini tanpa memajukan
   private check(type: TokenType): boolean {
-    // Perbaikan bug sebelumnya (memeriksa EOF) sudah ada di sini
     return this.peek().type === type;
   }
 
@@ -477,8 +477,6 @@ export class Parser {
         case TokenType.REPEAT:
         case TokenType.OUTPUT:
         case TokenType.OUTPUTF:
-        // --- PERBAIKAN ADA DI SINI ---
-        // 'Monitor' yang nyasar sudah dihapus dari daftar ini
         case TokenType.INPUT:
         case TokenType.INPUTF:
         case TokenType.ALGORITMA:

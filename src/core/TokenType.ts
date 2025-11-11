@@ -81,8 +81,8 @@ export enum TokenType {
   LENGTH,
 
   // --- Keywords - Literal Boolean ---
-  BENAR,
-  SALAH,
+  TRUE,  // <-- DIGANTI DARI BENAR
+  FALSE, // <-- DIGANTI DARI SALAH
 
   // --- Lain-lain ---
   COMMENT,      // // komentar satu baris atau /* ... */
@@ -132,6 +132,6 @@ export const keywords: Record<string, TokenType> = {
   "input": TokenType.INPUT,
   "inputf": TokenType.INPUTF,
   "length": TokenType.LENGTH,
-  "benar": TokenType.BENAR,
-  "salah": TokenType.SALAH,
+  "true": TokenType.TRUE,   // <-- DIGANTI DARI "benar"
+  "false": TokenType.FALSE, // <-- DIGANTI DARI "salah"
 };

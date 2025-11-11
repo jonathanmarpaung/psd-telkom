@@ -1,0 +1,10 @@
+program example_repeat
+kamus
+    i : integer
+algoritma
+    i = 1
+    repeat
+        output(i)
+        i = i + 1
+    untuk i <= 10
+endprogram

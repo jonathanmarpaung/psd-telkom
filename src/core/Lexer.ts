@@ -15,8 +15,6 @@ export class Lexer {
   private current: number = 0;
   private line: number = 1;
   private column: number = 0;
-  
-  // TIDAK ADA LAGI 'hadError' atau 'report' DI SINI
 
   constructor(source: string) {
     this.source = source;
@@ -43,10 +41,6 @@ export class Lexer {
     const c = this.advance();
     
     switch (c) {
-      // ... (case '(', ')', '[', ']', ':', ',', '+', '-', '*', '!', '=', '<', '>')
-      // ... (Tidak ada perubahan di sini)
-      
-      // 1. Token Satu Karakter
       case '(': this.addToken(TokenType.LEFT_PAREN); break;
       case ')': this.addToken(TokenType.RIGHT_PAREN); break;
       case '[': this.addToken(TokenType.LEFT_BRACKET); break;
@@ -54,7 +48,6 @@ export class Lexer {
       case ':': this.addToken(TokenType.COLON); break;
       case ',': this.addToken(TokenType.COMMA); break;
 
-      // 2. Token Operator (bisa 1 atau 2 karakter)
       case '+':
         this.addToken(this.match('=') ? TokenType.PLUS_EQUAL : TokenType.PLUS);
         break;
@@ -77,7 +70,6 @@ export class Lexer {
         this.addToken(this.match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
         break;
 
-      // 3. Handle Komentar (/)
       case '/':
         if (this.match('/')) {
           this.commentLine();
@@ -88,45 +80,38 @@ export class Lexer {
         }
         break;
 
-      // 4. Abaikan Whitespace
       case ' ':
       case '\r':
       case '\t':
         break;
 
-      // 5. Handle Newline
       case '\n':
         this.line++;
         this.column = 0;
         break;
 
-      // 6. Handle Literal
+      // --- PERUBAHAN DIMULAI DI SINI ---
       case '"': this.stringLiteral(); break;
       case "'": this.charLiteral(); break;
+      // --- PERUBAHAN SELESAI DI SINI ---
 
-      // 7. Handle Tipe yang lebih kompleks
       default:
         if (this.isDigit(c)) {
           this.numberLiteral();
         } else if (this.isAlpha(c)) {
           this.identifier();
         } else {
-          // --- PERUBAHAN DI SINI ---
-          // Karakter tidak dikenali
-          // Sebelumnya: Lexer.error(...)
           ErrorHandler.report(this.line, this.column, "", `Karakter tidak terduga: '${c}'`);
         }
         break;
     }
   }
 
-  // ... (Metode 'identifier()' dan 'numberLiteral()' tidak berubah) ...
   private identifier(): void {
     while (this.isAlphaNumeric(this.peek())) this.advance();
 
     const text = this.source.substring(this.start, this.current).toLowerCase();
     
-    // Cek apakah identifier ini sebenarnya adalah keyword?
     const type = keywords[text]; 
     
     if (type) {
@@ -148,39 +133,92 @@ export class Lexer {
     this.addToken(TokenType.NUMBER_LITERAL, value);
   }
 
+  // ==================================================================
+  // --- INI ADALAH METODE stringLiteral() YANG SUDAH DIPERBAIKI ---
+  // ==================================================================
   private stringLiteral(): void {
     while (this.peek() !== '"' && !this.isAtEnd()) {
       if (this.peek() === '\n') {
-        // --- PERUBAHAN DI SINI ---
+        // String multi-baris tetap error
         ErrorHandler.report(this.line, this.column, "", "String literal tidak boleh multi-baris.");
-        break;
       }
       this.advance();
     }
 
     if (this.isAtEnd()) {
-      // --- PERUBAHAN DI SINI ---
       ErrorHandler.report(this.line, this.column, "", "String literal tidak ditutup.");
       return;
     }
 
-    this.advance(); // Lewati "
+    // Lewati tanda kutip penutup (")
+    this.advance();
 
-    const value = this.source.substring(this.start + 1, this.current - 1);
+    // 1. Ambil substring mentah (cth: "Halo\\n")
+    const rawString = this.source.substring(this.start + 1, this.current - 1);
+    
+    // 2. Lakukan "Unescaping"
+    //    Kita ganti dua karakter '\\n' menjadi satu karakter '\n' (newline)
+    //    dan seterusnya untuk escape sequence lainnya.
+    const value = rawString
+      .replace(/\\n/g, '\n')  // Ganti literal \n dengan newline
+      .replace(/\\t/g, '\t')  // Ganti literal \t dengan tab
+      .replace(/\\"/g, '"')   // Ganti literal \" dengan "
+      .replace(/\\'/g, "'")   // Ganti literal \' dengan '
+      .replace(/\\\\/g, '\\'); // Ganti literal \\ dengan \
+
     this.addToken(TokenType.STRING_LITERAL, value);
   }
 
+  // ==================================================================
+  // --- INI ADALAH METODE charLiteral() YANG SUDAH DIPERBAIKI ---
+  // ==================================================================
   private charLiteral(): void {
-    if (this.peekNext() === "'" && !this.isAtEnd()) {
-        const charValue = this.advance();
-        this.advance(); // lewati ' penutup
-        this.addToken(TokenType.CHAR_LITERAL, charValue);
-    } else {
-        // --- PERUBAHAN DI SINI ---
-        ErrorHandler.report(this.line, this.column, "", "Character literal tidak valid. Harus 'A'.");
-        while(this.peek() !== "'" && !this.isAtEnd()) this.advance();
-        this.advance(); // lewati ' penutup
+    let charValue = '';
+
+    if (this.isAtEnd()) {
+        ErrorHandler.report(this.line, this.column, "", "Character literal tidak ditutup.");
+        return;
     }
+
+    // Cek apakah ini escape sequence
+    if (this.peek() === '\\') {
+      this.advance(); // Lewati '\'
+      if (this.isAtEnd()) {
+          ErrorHandler.report(this.line, this.column, "", "Character literal tidak lengkap.");
+          return;
+      }
+      
+      const escapedChar = this.advance(); // Ambil karakter setelah '\'
+      switch (escapedChar) {
+        case 'n': charValue = '\n'; break;
+        case 't': charValue = '\t'; break;
+        case '\\': charValue = '\\'; break;
+        case "'": charValue = "'"; break;
+        case '"': charValue = '"'; break;
+        default:
+          ErrorHandler.report(this.line, this.column, "", `Karakter escape tidak dikenal: '\\${escapedChar}'.`);
+          charValue = escapedChar; // Simpan apa adanya
+          break;
+      }
+    } else {
+      // Karakter biasa
+      charValue = this.advance();
+    }
+
+    // Pastikan ditutup dengan '
+    if (this.peek() !== "'") {
+      ErrorHandler.report(this.line, this.column, "", "Character literal harus satu karakter dan ditutup dengan '.");
+      // Maju sampai kita temukan penutupnya agar parser tidak bingung
+      while (!this.isAtEnd() && this.peek() !== "'") {
+          this.advance();
+      }
+    }
+    
+    if(!this.isAtEnd()) {
+        this.advance(); // Lewati ' penutup
+    }
+
+    this.addToken(TokenType.CHAR_LITERAL, charValue);
   }
 
   private commentLine(): void {
@@ -199,7 +237,6 @@ export class Lexer {
     }
 
     if (this.isAtEnd()) {
-      // --- PERUBAHAN DI SINI ---
       ErrorHandler.report(this.line, this.column, "", "Blok komentar tidak ditutup.");
       return;
     }
@@ -208,8 +245,6 @@ export class Lexer {
     this.advance(); // Lewati /
   }
 
-  // ... (Helper 'isAtEnd', 'advance', 'addToken', 'match', 'peek', 'peekNext') ...
-  // ... (Tidak ada perubahan di sini) ...
   private isAtEnd(): boolean {
     return this.current >= this.source.length;
   }
@@ -226,7 +261,7 @@ export class Lexer {
       lexeme: text,
       literal: literal,
       line: this.line,
-      column: this.column - text.length + 1 // Kalkulasi kolom awal yang lebih akurat
+      column: this.column - text.length + 1
     });
   }
 
@@ -249,8 +284,6 @@ export class Lexer {
     return this.source.charAt(this.current + 1);
   }
   
-  // ... (Helper 'isDigit', 'isAlpha', 'isAlphaNumeric') ...
-  // ... (Tidak ada perubahan di sini) ...
   private isDigit(char: string): boolean {
     return char >= '0' && char <= '9';
   }

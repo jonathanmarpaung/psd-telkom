@@ -1,0 +1,8 @@
+program for_example
+kamus
+    i : integer
+algoritma
+    for i = 1 to 10 then
+        output(i)
+    endfor
+endprogram

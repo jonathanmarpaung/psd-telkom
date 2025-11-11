@@ -1,0 +1,9 @@
+program example_logic
+kamus
+algoritma
+    output(1 == 1)
+    output(1 != 1)
+    output(1 >= 2)
+    output(1 <= 2)
+    output(true)
+endprogram    

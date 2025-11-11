@@ -26,9 +26,10 @@ type TypeVisitReturn = {
 };
 
 export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVisitor<any>, TypeVisitor<TypeVisitReturn> {
-  // ... (properti global, current, printHandler, inputHandler, constructor) ...
+
   public global: Environment = new Environment();
   private current: Environment;
+
   private readonly printHandler: (message: string) => void;
   private readonly inputHandler: () => string;
 
@@ -40,13 +41,15 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     this.printHandler = printHandler;
     this.inputHandler = inputHandler;
   }
-  
-  // ... (interpret(), execute(), evaluate(), executeBlock() tidak berubah) ...
+
   public interpret(program: ProgramNode): void {
     try {
+      // 1. Proses 'kamus'
       for (const declaration of program.declarations) {
         this.execute(declaration);
       }
+
+      // 2. Proses 'algoritma'
       for (const statement of program.statements) {
         this.execute(statement);
       }
@@ -54,10 +57,15 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
       if (error instanceof RuntimeError) {
         ErrorHandler.runtimeError(error);
       } else {
+        // Lapor error JavaScript internal yang tidak terduga
         console.error("Internal Interpreter Error:", error);
       }
     }
   }
+
+  // ==================================================================
+  // METODE EKSEKUSI (Helpers)
+  // ==================================================================
 
   private execute(node: Decl | Stmt): void {
     node.accept(this);
@@ -75,6 +83,7 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
         this.execute(statement);
       }
     } finally {
+      // Pastikan kita selalu kembali ke environment sebelumnya
       this.current = previousEnv;
     }
   }
@@ -103,7 +112,7 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     const typeInfo = decl.type.accept(this);
     const value = this.evaluate(decl.initializer);
     
-    // TODO: Type checking
+    // TODO: Tambahkan type checking di sini.
     
     if (typeInfo.type === 'array') {
       throw new Error("Deklarasi const array tidak didukung saat ini.");
@@ -116,18 +125,12 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
   // VISITOR: TIPE DATA (Bagian dari Deklarasi)
   // ==================================================================
 
-  // --- FIX [1] ---
-  // Mengubah return type di sini agar konsisten dengan `visitArrayType`
-  // Keduanya harus mengembalikan tipe `TypeVisitReturn` yang kita definisikan di atas.
   visitBasicType(type: BasicType): TypeVisitReturn {
     return {
       type: type.typeToken.lexeme as PsdBasicType,
-      // baseType dan dimensions opsional (undefined)
     };
   }
 
-  // --- FIX [1] ---
-  // Mengubah return type di sini agar konsisten dengan `visitBasicType`
   visitArrayType(type: ArrayType): TypeVisitReturn {
     const baseType = type.baseType.typeToken.lexeme as PsdBasicType;
     
@@ -147,8 +150,6 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
   // VISITOR: STATEMENT (ALGORITMA)
   // ==================================================================
 
-  // ... (visitBlockStmt, visitExprStmt, visitIfStmt, visitWhileStmt, 
-  //      visitForStmt, visitRepeatStmt, visitOutputStmt ... tidak berubah)
   visitBlockStmt(stmt: BlockStmt): void {
     this.executeBlock(stmt.statements, new Environment(this.current));
   }
@@ -188,38 +189,40 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     
     try {
       for (let i = startVal; i <= endVal; i++) {
+        // Update variabel loop di scope-nya
         this.current.assign(stmt.loopVariable, i);
+        // Eksekusi body (yang akan membuat scope-nya sendiri di *dalam* scope loop)
         this.execute(stmt.body);
       }
     } finally {
+      // Kembalikan env lama
       this.current = previousEnv;
     }
   }
 
   visitRepeatStmt(stmt: RepeatStmt): void {
+    // Logika do-while (ulangi *selama* kondisi true)
     do {
       this.execute(stmt.body);
-    } while (!this.isTruthy(this.evaluate(stmt.condition)));
+    } while (this.isTruthy(this.evaluate(stmt.condition)));
   }
 
   visitOutputStmt(stmt: OutputStmt): void {
     const values = stmt.args.map(arg => this.evaluate(arg));
     const message = values.map(v => this.stringify(v)).join(' ');
-    this.printHandler(message + '\n');
+    this.printHandler(message + '\n'); // output() membuat newline
   }
 
   visitOutputfStmt(stmt: OutputfStmt): void {
     const formatStr = this.evaluate(stmt.format);
     if (typeof formatStr !== 'string') {
-      // --- FIX [2] ---
-      // Mengganti `new Token(...)` dengan object literal
       const dummyToken: Token = { type: TokenType.OUTPUTF, lexeme: 'outputf', literal: null, line: 0, column: 0 };
       throw new RuntimeError(dummyToken, "Argumen pertama outputf harus string format.");
     }
     const values = stmt.args.map(arg => this.evaluate(arg));
     
     const message = format(formatStr, ...values);
-    this.printHandler(message);
+    this.printHandler(message); // outputf() tidak membuat newline
   }
   
   visitInputStmt(stmt: InputStmt): void {
@@ -229,7 +232,6 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     for (const target of stmt.targets) {
       const valStr = inputs.shift();
       if (valStr === undefined) {
-          // --- FIX [2] ---
           const dummyToken: Token = { type: TokenType.INPUT, lexeme: 'input', literal: null, line: 0, column: 0 };
           throw new RuntimeError(dummyToken, "Input tidak cukup untuk semua variabel.");
       }
@@ -246,7 +248,6 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     for (const target of stmt.targets) {
       const valStr = inputs.shift();
       if (valStr === undefined) {
-          // --- FIX [2] ---
           const dummyToken: Token = { type: TokenType.INPUTF, lexeme: 'inputf', literal: null, line: 0, column: 0 };
           throw new RuntimeError(dummyToken, "Input tidak cukup untuk semua variabel.");
       }
@@ -262,13 +263,11 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     } else if (target instanceof ArrayAccessExpr) {
         expectedType = this.current.getDescriptor(target.name).arrayInfo!.baseType;
     } else {
-        // --- FIX [2] ---
         const dummyToken: Token = { type: TokenType.INPUT, lexeme: 'input', literal: null, line: 0, column: 0 };
         throw new RuntimeError(dummyToken, "Target input() harus berupa variabel atau elemen array.");
     }
 
     let value: any;
-    // --- FIX [2] --- (Membuat satu dummy token untuk semua error di bawah)
     const dummyInputToken: Token = { type: TokenType.INPUT, lexeme: 'input', literal: null, line: 0, column: 0 };
     switch (expectedType) {
       case 'integer':
@@ -286,7 +285,7 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
         value = valStr.charAt(0);
         break;
       case 'boolean':
-        value = valStr.toLowerCase() === 'benar' || valStr === 'true';
+        value = valStr.toLowerCase() === 'true';
         break;
       default:
         throw new RuntimeError(dummyInputToken, "Tipe target input tidak diketahui.");
@@ -304,8 +303,6 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
   // VISITOR: EKSPRESI (ALGORITMA)
   // ==================================================================
 
-  // ... (visitLiteralExpr, visitGroupingExpr, visitVariableExpr, 
-  //      visitArrayAccessExpr, evaluateIndices ... tidak berubah)
   visitLiteralExpr(expr: LiteralExpr): any {
     return expr.value;
   }
@@ -341,7 +338,6 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     if (expr.target instanceof VariableExpr) {
       this.current.assign(expr.target.name, value);
     } else {
-      // --- FIX [2] ---
       const dummyToken: Token = { type: TokenType.EQUAL, lexeme: '=', literal: null, line: 0, column: 0 };
       throw new RuntimeError(dummyToken, "Target assignment tidak valid.");
     }
@@ -349,8 +345,6 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     return value;
   }
   
-  // ... (visitArraySetExpr, visitCompoundAssignExpr, visitUnaryExpr, 
-  //      visitLogicalExpr, visitBinaryExpr ... tidak berubah)
   visitArraySetExpr(expr: ArraySetExpr): any {
     const value = this.evaluate(expr.value);
     const indices = this.evaluateIndices(expr.target);
@@ -376,7 +370,11 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     let newValue: number;
     switch (expr.operator.type) {
         case TokenType.PLUS_EQUAL: newValue = currentVal + value; break;
+        // --- PERBAIKAN BUG ADA DI SINI ---
+        // Versi LAMA: TokenType.MINUS_EAL
+        // Versi BARU: TokenType.MINUS_EQUAL
         case TokenType.MINUS_EQUAL: newValue = currentVal - value; break;
+        // ---------------------------------
         case TokenType.STAR_EQUAL: newValue = currentVal * value; break;
         case TokenType.SLASH_EQUAL: newValue = currentVal / value; break;
         default: throw new RuntimeError(expr.operator, "Operator compound tidak dikenal.");
@@ -396,19 +394,20 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     const right = this.evaluate(expr.right);
     
     switch (expr.operator.type) {
-      case TokenType.BANG:
+      case TokenType.BANG: // ! (negasi)
         return !this.isTruthy(right);
-      case TokenType.MINUS:
+      case TokenType.MINUS: // - (negasi angka)
         this.checkNumberOperand(expr.operator, right);
         return -Number(right);
     }
     
-    return null;
+    return null; // Tidak terjangkau
   }
 
   visitLogicalExpr(expr: LogicalExpr): any {
     const left = this.evaluate(expr.left);
 
+    // Implementasi short-circuit
     if (expr.operator.type === TokenType.OR) {
       if (this.isTruthy(left)) return left;
     } else { // AND
@@ -423,6 +422,7 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     const right = this.evaluate(expr.right);
     
     switch (expr.operator.type) {
+      // Perbandingan
       case TokenType.GREATER:
         this.checkNumberOperands(expr.operator, left, right);
         return Number(left) > Number(right);
@@ -436,20 +436,22 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
         this.checkNumberOperands(expr.operator, left, right);
         return Number(left) <= Number(right);
       
+      // Persamaan
       case TokenType.BANG_EQUAL: return left !== right;
       case TokenType.EQUAL_EQUAL: return left === right;
       
+      // Aritmatika
       case TokenType.MINUS:
         this.checkNumberOperands(expr.operator, left, right);
         return Number(left) - Number(right);
       case TokenType.STAR:
         this.checkNumberOperands(expr.operator, left, right);
         return Number(left) * Number(right);
-      case TokenType.SLASH:
+      case TokenType.SLASH: // Hasilnya 'real'
         this.checkNumberOperands(expr.operator, left, right);
         if (Number(right) === 0) throw new RuntimeError(expr.operator, "Pembagian dengan nol.");
         return Number(left) / Number(right);
-      case TokenType.DIV:
+      case TokenType.DIV: // Hasilnya 'integer'
         this.checkNumberOperands(expr.operator, left, right);
         if (Number(right) === 0) throw new RuntimeError(expr.operator, "Pembagian dengan nol.");
         return Math.floor(Number(left) / Number(right));
@@ -457,6 +459,7 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
         this.checkNumberOperands(expr.operator, left, right);
         return Number(left) % Number(right);
       
+      // Operator '+' (overloaded: angka + angka, string + string)
       case TokenType.PLUS:
         if (typeof left === 'number' && typeof right === 'number') {
           return left + right;
@@ -467,17 +470,17 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
         throw new RuntimeError(expr.operator, "Operator '+' hanya bisa untuk angka atau string.");
     }
     
-    return null;
+    return null; // Tidak terjangkau
   }
 
   visitCallExpr(expr: CallExpr): any {
     if (!(expr.callee instanceof VariableExpr)) {
-      // --- FIX [2] ---
       const dummyToken: Token = { type: TokenType.IDENTIFIER, lexeme: 'callee', literal: null, line: 0, column: 0 };
       throw new RuntimeError(dummyToken, "Ekspresi pemanggilan tidak valid.");
     }
     
     const funcName = expr.callee.name.lexeme;
+    
     const args = expr.args.map(arg => this.evaluate(arg));
     
     switch (funcName.toLowerCase()) {
@@ -499,23 +502,34 @@ export class Interpreter implements DeclVisitor<void>, StmtVisitor<void>, ExprVi
     }
   }
 
-  // ... (isTruthy, stringify, checkNumberOperand, checkNumberOperands ... tidak berubah)
+
+  // ==================================================================
+  // HELPER RUNTIME
+  // ==================================================================
+
+  /**
+   * Mendefinisikan apa yang dianggap 'true' dalam 'psd'.
+   */
   private isTruthy(object: any): boolean {
     if (object === null) return false;
     if (object === false) return false;
     return true;
   }
   
+  /**
+   * Mengubah nilai runtime 'psd' menjadi string untuk output.
+   */
   private stringify(object: any): string {
     if (object === null) return "null";
-    if (object === true) return "benar";
-    if (object === false) return "salah";
+    if (object === true) return "true";
+    if (object === false) return "false";
     if (Array.isArray(object)) {
       return `[Array(${object.length})]`;
     }
     return String(object);
   }
   
+  // Helper untuk validasi tipe operand
   private checkNumberOperand(operator: Token, operand: any): void {
     if (typeof operand === 'number') return;
     throw new RuntimeError(operator, "Operand harus berupa angka.");
