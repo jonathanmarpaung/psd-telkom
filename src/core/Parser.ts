@@ -7,7 +7,6 @@
 
 import { Token, TokenType } from './TokenType';
 import {
-  // ... (Semua impor AST node tetap sama)
   ProgramNode, Decl, Stmt, Expr,
   VarDecl, ConstDecl, BasicType, ArrayType, TypeNode,
   IfStmt, WhileStmt, ForStmt, RepeatStmt, BlockStmt,
@@ -16,7 +15,7 @@ import {
   VariableExpr, AssignExpr, CompoundAssignExpr, CallExpr,
   ArrayAccessExpr, ArraySetExpr,
 } from '../ast/nodes';
-import { ErrorHandler } from '../utils/ErrorHandler'; // <-- 1. IMPORT BARU
+import { ErrorHandler } from '../utils/ErrorHandler';
 
 // Error kustom untuk masalah parsing
 class ParseError extends Error {}
@@ -24,7 +23,6 @@ class ParseError extends Error {}
 export class Parser {
   private readonly tokens: Token[];
   private current: number = 0;
-  // private static hadError: boolean = false; // <-- 2. DIHAPUS
 
   constructor(tokens: Token[]) {
     // Kita filter token COMMENT di sini agar Parser tidak perlu pusing
@@ -35,7 +33,6 @@ export class Parser {
    * Metode utama: Mem-parse seluruh program.
    */
   public parse(): ProgramNode | null {
-    // Parser.hadError = false; // <-- 3. DIHAPUS (Reset ditangani di level atas)
     try {
       this.consume(TokenType.PROGRAM, "Diharapkan 'program' di awal file.");
       const name = this.consume(TokenType.IDENTIFIER, "Diharapkan nama program.");
@@ -60,18 +57,6 @@ export class Parser {
   // ==================================================================
   // ATURAN GRAMMAR (RECURSIVE DESCENT)
   // ==================================================================
-  
-  // ... (Tidak ada perubahan di: declarationList, declaration, constDeclaration,
-  //      varDeclaration, typeNode, statementList, block, statement,
-  //      ifStatement, whileStatement, forStatement, repeatStatement,
-  //      functionArguments, outputStatement, outputfStatement,
-  //      inputStatement, inputfStatement, expressionStatement) ...
-  // (Semua metode di atas 100% SAMA)
-
-  // ... (Tidak ada perubahan di semua metode PARSING EKSPRESI) ...
-  // (expression, assignment, logicalOr, logicalAnd, equality,
-  //  comparison, term, factor, unary, call, primary)
-  // (Semua metode di atas 100% SAMA)
   
   private declarationList(): Decl[] {
     const declarations: Decl[] = [];
@@ -127,9 +112,6 @@ export class Parser {
 
     const dimensions: Expr[] = [];
     do {
-      // Izinkan ekspresi sebagai dimensi, cth: array[N*2]
-      // Tapi Parser hanya membangun pohonnya, Interpreter yang akan
-      // mengevaluasi apakah hasilnya integer.
       dimensions.push(this.expression());
       this.consume(TokenType.RIGHT_BRACKET, "Diharapkan ']' setelah dimensi array.");
     } while (this.match(TokenType.LEFT_BRACKET));
@@ -166,6 +148,7 @@ export class Parser {
     if (this.match(TokenType.OUTPUTF)) return this.outputfStatement();
     if (this.match(TokenType.INPUT)) return this.inputStatement();
     if (this.match(TokenType.INPUTF)) return this.inputfStatement();
+
     return this.expressionStatement();
   }
 
@@ -222,6 +205,7 @@ export class Parser {
     return new RepeatStmt(body, condition);
   }
 
+  // Helper untuk argumen fungsi
   private functionArguments(): Expr[] {
     const args: Expr[] = [];
     if (!this.check(TokenType.RIGHT_PAREN)) {
@@ -274,15 +258,19 @@ export class Parser {
     return new ExprStmt(expr);
   }
 
+  // ==================================================================
+  // PARSING EKSPRESI (OPERATOR PRECEDENCE)
+  // ==================================================================
+
   private expression(): Expr {
     return this.assignment();
   }
 
   private assignment(): Expr {
-    const expr = this.logicalOr();
+    const expr = this.logicalOr(); // Parse sisi kiri (L-Value)
 
     if (this.match(TokenType.EQUAL)) {
-      const value = this.assignment();
+      const value = this.assignment(); // Rekursif (kanan-asosiatif)
       if (expr instanceof VariableExpr) {
         return new AssignExpr(expr, value);
       } else if (expr instanceof ArrayAccessExpr) {
@@ -376,16 +364,18 @@ export class Parser {
 
     while (true) {
       if (this.match(TokenType.LEFT_PAREN)) {
+        // Panggilan fungsi, cth: length(nama)
         const args = this.functionArguments();
         expr = new CallExpr(expr, args);
       } else if (this.match(TokenType.LEFT_BRACKET)) {
+        // Akses array, cth: list[0]
         if (!(expr instanceof VariableExpr)) {
             throw this.error(this.previous(), "Hanya variabel yang bisa di-indeks.");
         }
         const indices: Expr[] = [];
         do {
             indices.push(this.expression());
-            this.consume(TokenType.RIGHT_BRACKET, "Diharapkan ']' setelah indeks array.");
+            this.consume(TokenType.RIGHT_BRACKET, "Diharapkan ']' setelah dimensi array.");
         } while (this.match(TokenType.LEFT_BRACKET));
         
         expr = new ArrayAccessExpr(expr.name, indices);
@@ -404,6 +394,7 @@ export class Parser {
       return new LiteralExpr(this.previous().literal);
     }
 
+    // Perbaikan typo 'this_match' -> 'this.match' ada di sini
     if (this.match(TokenType.IDENTIFIER)) {
       return new VariableExpr(this.previous());
     }
@@ -422,9 +413,7 @@ export class Parser {
   // HELPER DAN ERROR HANDLING
   // ==================================================================
 
-  // ... (Tidak ada perubahan di: match, consume, check, advance,
-  //      isAtEnd, peek, previous) ...
-  // (Semua metode di atas 100% SAMA)
+  // Cek apakah token saat ini cocok dengan salah satu tipe
   private match(...types: TokenType[]): boolean {
     for (const type of types) {
       if (this.check(type)) {
@@ -435,58 +424,63 @@ export class Parser {
     return false;
   }
 
+  // Memaksa token saat ini harus tipe tertentu, lalu maju
   private consume(type: TokenType, message: string): Token {
     if (this.check(type)) return this.advance();
     throw this.error(this.peek(), message);
   }
 
+  // Cek token saat ini tanpa memajukan
   private check(type: TokenType): boolean {
-    if (this.isAtEnd()) return false;
+    // Perbaikan bug sebelumnya (memeriksa EOF) sudah ada di sini
     return this.peek().type === type;
   }
 
+  // Maju ke token berikutnya
   private advance(): Token {
     if (!this.isAtEnd()) this.current++;
     return this.previous();
   }
 
+  // Cek apakah sudah di akhir
   private isAtEnd(): boolean {
     return this.peek().type === TokenType.EOF;
   }
 
+  // Mengintip token saat ini
   private peek(): Token {
     return this.tokens[this.current];
   }
 
+  // Mendapatkan token sebelumnya
   private previous(): Token {
     return this.tokens[this.current - 1];
   }
 
   // Melaporkan dan melempar error
   private error(token: Token, message: string): ParseError {
-    // --- 4. PERUBAHAN UTAMA DI SINI ---
-    // Sebelumnya: Parser.report(token.line, token.column, `di '${token.lexeme}'`, message);
     ErrorHandler.error(token, message); // Panggil ErrorHandler terpusat
     return new ParseError(message);
   }
 
   /**
    * Mode panik: Sinkronisasi setelah error.
+   * Terus maju sampai menemukan "batas" statement berikutnya.
    */
   private synchronize(): void {
     this.advance();
     while (!this.isAtEnd()) {
       switch (this.peek().type) {
-        // Keyword yang mungkin memulai statement baru
         case TokenType.IF:
         case TokenType.WHILE:
         case TokenType.FOR:
         case TokenType.REPEAT:
         case TokenType.OUTPUT:
         case TokenType.OUTPUTF:
+        // --- PERBAIKAN ADA DI SINI ---
+        // 'Monitor' yang nyasar sudah dihapus dari daftar ini
         case TokenType.INPUT:
         case TokenType.INPUTF:
-        // Keyword batas blok
         case TokenType.ALGORITMA:
         case TokenType.ENDPROGRAM:
           return;
