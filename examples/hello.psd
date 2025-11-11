@@ -1,0 +1,20 @@
+program helloWorld
+kamus
+    nama : string
+    umur : integer
+algoritma
+    output("Halo! Siapa nama kamu?")
+    input(nama)
+    
+    output("Berapa umur kamu?")
+    input(umur)
+    
+    outputf("Senang bertemu denganmu, %s!\n", nama)
+    outputf("Umur kamu %d tahun.\n", umur)
+    
+    if umur > 17 then
+        output("Kamu sudah dewasa.")
+    else
+        output("Kamu masih remaja.")
+    endif    
+endprogram

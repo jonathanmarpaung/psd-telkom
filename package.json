@@ -1,0 +1,33 @@
+{
+  "name": "psd-telkom",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./dist/bin/psd.js",
+    "dev": "ts-node ./src/index.ts",
+    "run:psd": "ts-node ./src/bin/psd.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathanmarpaung/psd-telkom.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jonathanmarpaung/psd-telkom/issues"
+  },
+  "homepage": "https://github.com/jonathanmarpaung/psd-telkom#readme",
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/readline-sync": "^1.4.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "readline-sync": "^1.4.10"
+  }
+}
