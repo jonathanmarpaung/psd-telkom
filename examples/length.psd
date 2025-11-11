@@ -1,0 +1,7 @@
+program example_length
+kamus
+    str : string
+algoritma
+    str = "Hello, World"
+    output(length(str))
+endprogram

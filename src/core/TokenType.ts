@@ -65,7 +65,7 @@ export enum TokenType {
   WHILE,
   ENDWHILE,
   REPEAT,
-  UNTUK,  // Ini adalah "until" dari `repeat ... until`
+  UNTUK,
 
   // --- Keywords - Operator Logika & Aritmatika ---
   AND,
@@ -78,15 +78,15 @@ export enum TokenType {
   OUTPUTF,
   INPUT,
   INPUTF,
-  LENGTH,
+  // LENGTH,  <-- DIHAPUS (Agar dianggap sebagai Identifier)
 
   // --- Keywords - Literal Boolean ---
-  TRUE,  // <-- DIGANTI DARI BENAR
-  FALSE, // <-- DIGANTI DARI SALAH
+  TRUE,
+  FALSE,
 
   // --- Lain-lain ---
-  COMMENT,      // // komentar satu baris atau /* ... */
-  EOF           // End of File (Penanda akhir dari kode)
+  COMMENT,
+  EOF
 }
 
 
@@ -131,7 +131,7 @@ export const keywords: Record<string, TokenType> = {
   "outputf": TokenType.OUTPUTF,
   "input": TokenType.INPUT,
   "inputf": TokenType.INPUTF,
-  "length": TokenType.LENGTH,
-  "true": TokenType.TRUE,   // <-- DIGANTI DARI "benar"
-  "false": TokenType.FALSE, // <-- DIGANTI DARI "salah"
+  // "length": TokenType.LENGTH, <-- DIHAPUS (Agar dianggap sebagai Identifier)
+  "true": TokenType.TRUE,
+  "false": TokenType.FALSE,
 };
