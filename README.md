@@ -59,21 +59,13 @@ Proyek ini dibangun dengan Node.js dan TypeScript.
     ```bash
     npm install
     ```
-
 3.  **Install `readline-sync` (Wajib untuk `input()`):**
     ```bash
     npm install readline-sync
     npm install @types/readline-sync --save-dev
     ```
 
-4.  **Install Jest (Wajib untuk testing):**
-    ```bash
-    npm install jest ts-jest @types/jest --save-dev
-    ```
-    (Dan pastikan Anda memiliki `jest.config.js`)
-
-5.  **Compile TypeScript:**
-    (Wajib jika Anda ingin menjalankan build produksi)
+4.  **Compile TypeScript:**
     ```bash
     npm run build
     ```
@@ -82,6 +74,7 @@ Proyek ini dibangun dengan Node.js dan TypeScript.
 
 Anda dapat menjalankan file `.psd` apapun menggunakan skrip `run:psd` yang ada di `package.json`. Skrip ini menggunakan `ts-node` untuk mengeksekusi interpreter secara langsung.
 
+### Development
 ```bash
 npm run run:psd <path/to/file.psd>
 ````
@@ -90,6 +83,18 @@ npm run run:psd <path/to/file.psd>
 
 ```bash
 npm run run:psd examples/hello.psd
+```
+
+### Build
+Setelah di build maka akan ada file `dist/psd.js` dan bisa gunakan itu:
+```bash
+node ./dist/psd.js <path/to/file.psd>
+````
+
+**Contoh:**
+
+```bash
+node ./dist/psd.js examples/hello.psd
 ```
 
 ## Menjalankan Tes
@@ -322,33 +327,4 @@ algoritma
     outputf("Masukkan nama: "); input(nama)
     
     output(1); output(2); output(3)
-```
-
------
-
-## Struktur Arsitektur Proyek
-
-Kode sumber interpreter dibagi menjadi beberapa modul inti di dalam folder `src/`:
-
-```
-src/
-├── core/
-│   ├── Lexer.ts       # (Scanner) Mengubah teks -> Token
-│   ├── Parser.ts      # (Parser) Mengubah Token -> AST
-│   ├── Interpreter.ts # (Executor) Menjalankan AST
-│   └── TokenType.ts   # Definisi semua tipe token (kosakata)
-│
-├── ast/
-│   └── nodes.ts       # Definisi semua kelas untuk AST (Pola Visitor)
-│
-├── runtime/
-│   └── Environment.ts # Mengelola memori, scope, dan variabel
-│
-├── utils/
-│   └── ErrorHandler.ts # Modul terpusat untuk pelaporan error
-│
-├── bin/
-│   └── psd.ts         # Titik masuk CLI
-│
-└── index.ts             # Pipeline utama yang menyatukan semua modul
 ```
